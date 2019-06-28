@@ -8,6 +8,24 @@ import (
 	"time"
 )
 
+func primeTesterFromTo_CheckDoneLessOften(n int, from int, to int, isNotPrimeChannel chan <- bool, done <-chan interface{}) {
+	defer close(isNotPrimeChannel)
+	interval := int(to / 100) + 1
+	for i := from; i < interval; i++ {
+		for j := 0; j <= 100; j++ {
+			select{
+			case <-done:
+				return
+			default:
+				if n % (interval * i + j) == 0 {
+					isNotPrimeChannel <- true
+					return
+				}
+			}
+		}
+	}
+}
+
 func primeTesterFromTo(n int, from int, to int, isNotPrimeChannel chan <- bool, done <-chan interface{}) {
 	defer close(isNotPrimeChannel)
 	for i := from; i < to; i++ {
@@ -103,6 +121,33 @@ func primeTesterConcTwo(n int) bool {
 	return true
 }
 
+
+func primeTesterConcTwo_CheckDoneLessOften(n int) bool {
+	done := make(chan interface{})
+	defer close(done)
+
+	numChannels := 2
+	isNotPrimeChannels := createChannels(numChannels)
+
+	to_max := int(math.Sqrt(float64(n))) + 1
+	to_interval := to_max / len(isNotPrimeChannels)
+	for i := 0; i < len(isNotPrimeChannels); i++ {
+		from := to_interval * i + 2
+		to := to_interval * (i+1) + 2
+		primeTesterFromTo_CheckDoneLessOften(n, from, to, isNotPrimeChannels[i], done)
+	}
+
+
+	for _, v := range isNotPrimeChannels {
+		isNotPrime := <-v
+		if isNotPrime == true {
+			return false
+		}
+	}
+	return true
+}
+
+
 func primeTesterLinear(n int) bool {
 	for i := 2; i < int(math.Sqrt(float64(n))) + 1; i++ {
 		if n%i == 0 {
@@ -124,5 +169,10 @@ func main() {
 
 	start = time.Now()
 	fmt.Println(primeTesterConcTwo(n))
+	fmt.Println("Conc Two Search took:", time.Since(start))
+
+
+	start = time.Now()
+	fmt.Println(primeTesterConcTwo_CheckDoneLessOften(n))
 	fmt.Println("Conc Two Search took:", time.Since(start))
 }
