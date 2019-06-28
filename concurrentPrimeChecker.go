@@ -10,17 +10,17 @@ import (
 
 func primeTesterFromTo_CheckDoneLessOften(n int, from int, to int, isNotPrimeChannel chan <- bool, done <-chan interface{}) {
 	defer close(isNotPrimeChannel)
-	interval := int(to / 100) + 1
-	for i := from; i < interval; i++ {
-		for j := 0; j <= 100; j++ {
-			select{
-			case <-done:
+	interval := int((to - from) / 100) + 1
+	for i := 0; i < 100; i++ {
+		select {
+		case <-done:
+			return
+		default:
+		}
+		for j := 0; j <= interval; j++ {
+			if n % (from + interval * i + j) == 0 {
+				isNotPrimeChannel <- true
 				return
-			default:
-				if n % (interval * i + j) == 0 {
-					isNotPrimeChannel <- true
-					return
-				}
 			}
 		}
 	}
@@ -41,9 +41,9 @@ func primeTesterFromTo(n int, from int, to int, isNotPrimeChannel chan <- bool, 
 	}
 }
 
-func createChannels(numCPUS int) []chan bool {
+func createChannels(numChannels int) []chan bool {
 	isNotPrimeChannels := make([]chan bool, 0)
-	for i := 0; i < numCPUS; i++ {
+	for i := 0; i < numChannels; i++ {
 		isNotPrimeChannels = append(isNotPrimeChannels, make(chan bool))
 	}
 	return isNotPrimeChannels
@@ -83,9 +83,8 @@ func primeTesterConc(n int) bool {
 	for i := 0; i < len(isNotPrimeChannels); i++ {
 		from := to_interval * i + 2
 		to := to_interval * (i+1) + 2
-		primeTesterFromTo(n, from, to, isNotPrimeChannels[i], done)
+		go primeTesterFromTo(n, from, to, isNotPrimeChannels[i], done)
 	}
-
 
 	for v := range merged {
 		if v == true {
@@ -100,25 +99,17 @@ func primeTesterConcTwo(n int) bool {
 	done := make(chan interface{})
 	defer close(done)
 
-	numChannels := 2
-	isNotPrimeChannels := createChannels(numChannels)
+	isNotPrimeChannels := createChannels(2)
 
-	to_max := int(math.Sqrt(float64(n))) + 1
-	to_interval := to_max / len(isNotPrimeChannels)
-	for i := 0; i < len(isNotPrimeChannels); i++ {
-		from := to_interval * i + 2
-		to := to_interval * (i+1) + 2
-		primeTesterFromTo(n, from, to, isNotPrimeChannels[i], done)
+	max := int(math.Sqrt(float64(n))) + 1
+	mid := int(max / 2) + 1
+	go primeTesterFromTo(n, 2, mid, isNotPrimeChannels[0], done)
+	go primeTesterFromTo(n, mid, max, isNotPrimeChannels[1], done)
+
+	if <-isNotPrimeChannels[0] {
+		return false
 	}
-
-
-	for _, v := range isNotPrimeChannels {
-		isNotPrime := <-v
-		if isNotPrime == true {
-			return false
-		}
-	}
-	return true
+	return !<-isNotPrimeChannels[1]
 }
 
 
@@ -126,25 +117,17 @@ func primeTesterConcTwo_CheckDoneLessOften(n int) bool {
 	done := make(chan interface{})
 	defer close(done)
 
-	numChannels := 2
-	isNotPrimeChannels := createChannels(numChannels)
+	isNotPrimeChannels := createChannels(2)
 
-	to_max := int(math.Sqrt(float64(n))) + 1
-	to_interval := to_max / len(isNotPrimeChannels)
-	for i := 0; i < len(isNotPrimeChannels); i++ {
-		from := to_interval * i + 2
-		to := to_interval * (i+1) + 2
-		primeTesterFromTo_CheckDoneLessOften(n, from, to, isNotPrimeChannels[i], done)
+	max := int(math.Sqrt(float64(n))) + 1
+	mid := int(max / 2) + 1
+	go primeTesterFromTo_CheckDoneLessOften(n, 2, mid, isNotPrimeChannels[0], done)
+	go primeTesterFromTo_CheckDoneLessOften(n, mid, max, isNotPrimeChannels[1], done)
+
+	if <-isNotPrimeChannels[0] {
+		return false
 	}
-
-
-	for _, v := range isNotPrimeChannels {
-		isNotPrime := <-v
-		if isNotPrime == true {
-			return false
-		}
-	}
-	return true
+	return !<-isNotPrimeChannels[1]
 }
 
 
