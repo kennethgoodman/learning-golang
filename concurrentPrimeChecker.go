@@ -122,6 +122,6 @@ func main() {
 	fmt.Println("Conc Search took:", time.Since(start))
 
 	start = time.Now()
-	fmt.Println(primeTesterConc(n))
+	fmt.Println(primeTesterConcTwo(n))
 	fmt.Println("Conc Two Search took:", time.Since(start))
 }
