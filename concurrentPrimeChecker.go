@@ -141,7 +141,7 @@ func primeTesterLinear(n int) bool {
 }
 
 func main() {
-	n := 100000004987 // * 1002523// 1002523 * 1000099 // * 24941317
+	n := 100000004987 * 1002523// 1002523 * 1000099 // * 24941317
 	start := time.Now()
 	fmt.Println(primeTesterLinear(n))
 	fmt.Println("Linear Search took:", time.Since(start))
@@ -157,5 +157,5 @@ func main() {
 
 	start = time.Now()
 	fmt.Println(primeTesterConcTwo_CheckDoneLessOften(n))
-	fmt.Println("Conc Two Search took:", time.Since(start))
+	fmt.Println("Conc 2 Search With Done Check Delay took:", time.Since(start))
 }
