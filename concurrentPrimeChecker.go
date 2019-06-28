@@ -32,6 +32,7 @@ func createChannels(numCPUS int) []chan bool {
 }
 
 func merge(cs ...chan bool) <-chan bool {
+	// https://medium.com/justforfunc/two-ways-of-merging-n-channels-in-go-43c0b57cd1de
 	out := make(chan bool)
 	var wg sync.WaitGroup
 	wg.Add(len(cs))
