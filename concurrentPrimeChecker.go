@@ -55,7 +55,7 @@ func primeTesterConc(n int) bool {
 	defer close(done)
 
 	numCPUs := runtime.NumCPU()
-	numChannels := numCPUs// * 10
+	numChannels := numCPUs
 	isNotPrimeChannels := createChannels(numChannels)
 	merged := merge(isNotPrimeChannels...)
 
@@ -70,6 +70,32 @@ func primeTesterConc(n int) bool {
 
 	for v := range merged {
 		if v == true {
+			return false
+		}
+	}
+	return true
+}
+
+
+func primeTesterConcTwo(n int) bool {
+	done := make(chan interface{})
+	defer close(done)
+
+	numChannels := 2
+	isNotPrimeChannels := createChannels(numChannels)
+
+	to_max := int(math.Sqrt(float64(n))) + 1
+	to_interval := to_max / len(isNotPrimeChannels)
+	for i := 0; i < len(isNotPrimeChannels); i++ {
+		from := to_interval * i + 2
+		to := to_interval * (i+1) + 2
+		primeTesterFromTo(n, from, to, isNotPrimeChannels[i], done)
+	}
+
+
+	for _, v := range isNotPrimeChannels {
+		isNotPrime := <-v
+		if isNotPrime == true {
 			return false
 		}
 	}
@@ -91,9 +117,11 @@ func main() {
 	fmt.Println(primeTesterLinear(n))
 	fmt.Println("Linear Search took:", time.Since(start))
 
-
 	start = time.Now()
 	fmt.Println(primeTesterConc(n))
 	fmt.Println("Conc Search took:", time.Since(start))
 
+	start = time.Now()
+	fmt.Println(primeTesterConc(n))
+	fmt.Println("Conc Two Search took:", time.Since(start))
 }
